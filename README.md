@@ -7,9 +7,6 @@ I’ve decided to go with a Warioware-esque/bop-it design of a bunch of minimali
 Inputs
 - Left & Right Buttons
 - Switch
-- Accelerometer
-- Sound Sensor
-- Light Sensor
 
 Outputs
 - LED's
