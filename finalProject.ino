@@ -1,29 +1,22 @@
 #include <Adafruit_CircuitPlayground.h>
-#include <AsyncDelay.h>
 
-int game, buttonCountL, buttonCountR, bothButtonCount;
-int difficulty = 0;
-int points = 0;
+//Global variables.
+int difNum, points, greenLED, yellowLED1, yellowLED2, count, randLED;
+int difficulty[17] = {100, 90, 80, 70, 60, 50, 44, 40, 34, 30, 24, 20, 14, 10, 8, 4, 2}; //Array of difficulties to increment through.
 int lives = 3;
 int buttonPinL = 4;
 int buttonPinR = 5;
 int switchPin = 7;
-float X, Y, Z;
 volatile bool buttonFlagL = 0;
 volatile bool buttonFlagR = 0;
 volatile bool switchFlag = 0;
-bool switchState, gameStart, gamePause;
+bool switchState, game;
 
 float midi[127];
 int a440 = 440;
 
-AsyncDelay delay_1s;
-AsyncDelay delay_3s;
-AsyncDelay delay_5s;
-AsyncDelay delay_10s;
-
 void setup() {
-  // put your setup code here, to run once:
+  //Intiallizing CircuitPlayground, interrupts, serial monitor, and MIDI.
   CircuitPlayground.begin();
   attachInterrupt(digitalPinToInterrupt(buttonPinL), leftButtonISR, RISING);
   attachInterrupt(digitalPinToInterrupt(buttonPinR), rightButtonISR, RISING);
@@ -34,235 +27,199 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  X = CircuitPlayground.motionX();
-  Y = CircuitPlayground.motionY();
-  Z = CircuitPlayground.motionZ();
+  if (switchFlag == 1) //When the switch moves, the game pauses.
+    delay(5);
+    off();
+    switchState = digitalRead(switchPin);
+    switchFlag = 0;
+  }
 
-    if (switchFlag == 1) {
-      gamePause = 1;
-      switchState = digitalRead(switchPin);
-      Serial.println("Game paused.");
-      switchFlag = 0;
+  if (!switchState) {
+    //The game itself.
+    delay(5);
+    game = 1;
+
+    greenLED = random(0,9); //Declaring where the LED's are going to go.
+    
+    yellowLED1 = greenLED - 1;
+    if (yellowLED1 < 0) {
+      yellowLED1 = 9;
     }
 
-    if (!switchState) {
-      delay(5);
-      game = random(1,2);
-      if (game == 1) {
-        game3();
-      } else if (game == 2) {
-        game2();
-      }
-      
-      if (points == 3 || points == 6 || points == 9 || points == 12 || points ==  15) {
-        difficulty++;
-      }
-  }
-}
+    yellowLED2 = greenLED + 1;
+    if (yellowLED2 > 10) {
+      yellowLED2 = 0;
+    }
 
-void game1() {
-  //Don't move anything.
-  delay(5);
-  Serial.println("Don't move!");
-  gameStart = 1;
-    if (difficulty > 0 && difficulty < 2) {
-      delay_1s.start(1000, AsyncDelay::MILLIS);
-      while (!(delay_1s.isExpired())) {
-        X = CircuitPlayground.motionX();
-        Y = CircuitPlayground.motionY();
-        Z = CircuitPlayground.motionZ();
+    for (int i = 0; i < 10; i++) { 
+      //Looping through the LEDS, checks to implement the green/yellow LEDS.
+      if(i == greenLED) {
+        CircuitPlayground.setPixelColor(i, 0, 200, 0);
+      } else if (i == yellowLED1 || i == yellowLED2) {
+        CircuitPlayground.setPixelColor(i, 200, 200, 0);
+      } else {
+        CircuitPlayground.setPixelColor(i, 200, 0, 0);
       }
-      if (delay_1s.isExpired()) {
-        if ((X > (X - 30) && X < (X + 30)) && (Y > (Y - 30) && Y < (Y + 30)) && (Z > (Z - 30) && Z < (Z + 30))) {
-          win();
-        } else {
-          loss();
-        }
-      }
-      delay(50);
-    } else if (difficulty > 2 && difficulty < 5) {
-      delay_3s.start(3000, AsyncDelay::MILLIS);
-      while (!(delay_3s.isExpired())) {
-        X = CircuitPlayground.motionX();
-        Y = CircuitPlayground.motionY();
-        Z = CircuitPlayground.motionZ();
-      }
-      if (delay_3s.isExpired()) {
-        if ((X > (X - 20) && X < (X + 20)) && (Y > (Y - 20) && Y < (Y + 20)) && (Z > (Z - 20) && Z < (Z + 20))) {
-          win();
-        } else {
-          loss();
-        }
-      } 
-      delay(50);
-    } else if (difficulty > 5) {
-      delay_5s.start(5000, AsyncDelay::MILLIS);
-      while (!(delay_5s.isExpired())) {
-          X = CircuitPlayground.motionX();
-          Y = CircuitPlayground.motionY();
-          Z = CircuitPlayground.motionZ();
-      }
-      if (delay_5s.isExpired()) {
-        if ((X > (X - 10) && X < (X + 10)) && (Y > (Y - 10) && Y < (Y + 10)) && (Z > (Z - 10) && Z < (Z + 10))) {
-          win();
-        } else {
-          loss();
-        }
-      }
-    delay(50);
-  }
-}
+    }
 
-void game2() {
-  //Press left button 5 times.
-  Serial.println("Press left button 5 times.");
-  if (difficulty > 0 && difficulty < 3) {
-      delay_3s.start(3000, AsyncDelay::MILLIS);
-      while (!(delay_3s.isExpired())) {
-        if (buttonFlagL == 1) {
-          buttonCountL++;
-          buttonFlagL = 0;
+    while (game == 1) {
+    //The game itself.
+      for (int i = 0; i < 10; i++) {
+        if (switchFlag == 1) { 
+          //Checks the switch every loop so you can pause.
+          game = 0;
+          break;
+        }
+
+        CircuitPlayground.setPixelColor(i, 200, 200, 200);
+        delay(difficulty[difNum]); //Delay between LED's corresponds to the current difficulty of the game.
+
+        if(i == greenLED) { //Sets the LED's back where they were, after setting the LED's white.
+          CircuitPlayground.setPixelColor(i, 0, 200, 0);
+        } else if (i == yellowLED1 || i == yellowLED2) {
+          CircuitPlayground.setPixelColor(i, 200, 200, 0);
+        } else {
+          CircuitPlayground.setPixelColor(i, 200, 0, 0);
+        }
+        delay(difficulty[difNum]);
+        
+        if (buttonFlagR == 1 || buttonFlagL == 1) { //Checks for button presses.
           delay(5);
-        }
-      }
-      if (delay_3s.isExpired()) {
-        if (buttonCountL == 5) {
-          win();
-          buttonCountL = 0;
-        } else {
-          loss();
-          buttonCountL = 0;
-        }
-      }
-      delay(50);
-    } else {
-      delay_1s.start(1000, AsyncDelay::MILLIS);
-      while (!(delay_1s.isExpired())) {
-        if (buttonFlagL == 1) {
-          
-          buttonCountL++;
-          buttonFlagL = 0;
-        }
-      }
-      if (delay_1s.isExpired()) {
-        if (buttonCountL == 5) {
-          win();
-          buttonCountL = 0;
-        } else {
-          loss();
-          buttonCountL = 0;
-        }
-      }
-    delay(50);
-  }
-}
+          if (i == greenLED) { 
+            //Checks if the button is pressed on the green LED, if so, gain 2 points.
+            points = points + 2;
+            count = count + 2;
+            scorePointsGreen();
+          } else if (i == yellowLED1 || i == yellowLED2) { 
+            //Checks if the button is pressed on the yellow LED's, if so, gain a point.
+            points++;
+            count++;
+            scorePointsYellow();
+          } else if (i != greenLED || i != yellowLED1 || i != yellowLED2) { 
+            //Checks if the button is pressed on the red LED's, if so, lose a life.
+            lives--;
+            if (lives > 0) { 
+              //Checks if lives are greater than 0, if so, lose a life.
+              loseLife();
+            } else { 
+              //If you have zero lives, you lose.
+              Serial.print("You lost.\n");
+              loss();
+              lives = 3;
+              points = 0;
+              difNum = 0;
+              count = 0;
+            }
+          }
 
-void game3() {
-  //Press right button 5 times.
-  Serial.println("Press right button 5 times.");
-  if (difficulty > 0 && difficulty < 3) {
-      delay_5s.start(5000, AsyncDelay::MILLIS);
-      while (!(delay_5s.isExpired())) {
-        if (buttonFlagR == 1) {
-          buttonCountR++;
-          buttonFlagL = 0;
-          delay(5);
-        }
-      }
-      if (delay_5s.isExpired()) {
-        if (buttonCountR == 5) {
-          win();
-          buttonCountR = 0;
-        } else {
-          loss();
-          buttonCountR = 0;
-        }
-      }
-    } else {
-      delay_3s.start(3000, AsyncDelay::MILLIS);
-      while (!(delay_3s.isExpired())) {
-        if (buttonFlagR == 1) {
-          
-          buttonCountR++;
+          if (count > 2) { 
+            /*Increments difficulty/delay time every two points.
+            Once the difficulty is greater then the number of delay times, it stops incrementing.*/
+            if (difNum >= sizeof(difficulty)/sizeof(int)) {
+              count = 0;
+            } else {
+              difNum++;
+              count = 0;
+            }
+          }
+          //Resets flags and stops looping after the button is pressed, and all checks are in place.
           buttonFlagR = 0;
+          buttonFlagL = 0;
+          game = 0;
+          break;
         }
       }
-      if (delay_3s.isExpired()) {
-        if (buttonCountR == 5) {
-          win();
-          buttonCountR = 0;
-        } else {
-          loss();
-          buttonCountR = 0;
-        }
-      }
+      delay(difficulty[difNum]);
+    }
+      Serial.print("Score: ");
+      Serial.println(points);
+      Serial.print("Lives: ");
+      Serial.println(lives);
   }
 }
 
-void win() {
-  points = points + 1;
-  
+void scorePointsGreen() {
+  //Light/sound pattern when you land on green.
   for (int i = 0; i < 10; i++) {
     CircuitPlayground.setPixelColor(i, 0, 255, 0);
   }
   
-  CircuitPlayground.playTone(midi[56], 50);
-  delay(50);
-  CircuitPlayground.playTone(midi[63], 50);
-  delay(50);
-  CircuitPlayground.playTone(midi[68], 50);
-  delay(50);
+  CircuitPlayground.playTone(midi[56], 40);
+  delay(40);
+  CircuitPlayground.playTone(midi[63], 40);
+  delay(40);
+  CircuitPlayground.playTone(midi[68], 40);
+  delay(40);
   
   for (int i = 0; i < 10; i++) {
     CircuitPlayground.setPixelColor(i, 0, 0, 0);
   }
+}
 
-  Serial.print("Score: ");
-  Serial.println(points);
-  Serial.print("Lives: ");
-  Serial.println(lives);
-  gameStart = 0;
-  delay(1000);
+void scorePointsYellow() {
+  //Light/sound pattern when you land on yellow.
+  for (int i = 0; i < 10; i++) {
+    CircuitPlayground.setPixelColor(i, 255, 255, 0);
+  }
+  
+  CircuitPlayground.playTone(midi[68], 40);
+  delay(40);
+  CircuitPlayground.playTone(midi[63], 40);
+  delay(40);
+  CircuitPlayground.playTone(midi[68], 40);
+  delay(40);
+  
+  for (int i = 0; i < 10; i++) {
+    CircuitPlayground.setPixelColor(i, 0, 0, 0);
+  }
+}
+
+void loseLife() {
+  //Light/sound pattern when you land on red.
+  for (int i = 0; i < 10; i++) {
+    CircuitPlayground.setPixelColor(i, 200, 0, 0);
+  }
+  CircuitPlayground.playTone(midi[68], 40);
+  delay(40);
+  CircuitPlayground.playTone(midi[63], 40);
+  delay(40);
+  CircuitPlayground.playTone(midi[56], 40);
+  delay(40);
+  for (int i = 0; i < 10; i++) {
+    CircuitPlayground.setPixelColor(i, 0, 0, 0);
+  }
 }
 
 void loss() {
-  lives = lives - 1;
+  //Light/sound pattern when you lose a life.
+  for (int i = 0; i < 10; i++) {
+    CircuitPlayground.setPixelColor(i, 200, 0, 0);
+  }
+  CircuitPlayground.playTone(midi[68], 40);
+  delay(40);
 
   for (int i = 0; i < 10; i++) {
-    CircuitPlayground.setPixelColor(i, 255, 0, 0);
+    CircuitPlayground.setPixelColor(i, 200, 0, 0);
   }
-  CircuitPlayground.playTone(midi[68], 50);
-  delay(50);
-  CircuitPlayground.playTone(midi[63], 50);
-  delay(50);
-  CircuitPlayground.playTone(midi[56], 50);
-  delay(50);
+  CircuitPlayground.playTone(midi[63], 40);
+  delay(40);
+
+  for (int i = 0; i < 10; i++) {
+    CircuitPlayground.setPixelColor(i, 200, 0, 0);
+  }
+  CircuitPlayground.playTone(midi[56], 1500);
+  delay(40);
+
   for (int i = 0; i < 10; i++) {
     CircuitPlayground.setPixelColor(i, 0, 0, 0);
   }
+}
 
-  Serial.print("Lives: ");
-  Serial.println(lives);
-  Serial.print("Score: ");
-  Serial.println(points);
-  
-  if (lives == 0) {
-    for (int beeps = 0; beeps < 3; beeps++) {
-      for (int i = 0; i < 10; i++) {
-        CircuitPlayground.setPixelColor(i, 255, 0, 0);
-      }
-      CircuitPlayground.playTone(midi[56], 500);
-      for (int i = 0; i < 10; i++) {
-        CircuitPlayground.setPixelColor(i, 0, 0, 0);
-      }
-    }
-    Serial.println("You lost.");
-    Serial.println("Score: ");
-    Serial.println(points);
-    lives = 3;
+void off() {
+  //Turns off all LED's when game is paused.
+  for (int i = 0; i < 10; i++){
+    CircuitPlayground.setPixelColor(i, 0, 0, 0);
   }
-  delay(1000);
 }
 
 void leftButtonISR() {
