@@ -1,7 +1,7 @@
-# Simon-Says-Wario-Ware-Game
+# Arcade-Timing-Game
 
 # Description & Rules
-I’ve decided to go with a Warioware-esque/bop-it design of a bunch of minimalistic games with simple objectives which would keep repeating until you’ve run out of lives. You have a certain amount of time to complete each objective given, and as you keep winning, the time needed to complete each objective gets shorter and shorter, which will add a sense of urgency and give a competitive edge to the game. There's a points system, and it would be based on the amount of minigames completed within the three lives. The farther you get into the game, the more points are earned per minigame, in order to reward the player for completing challenges.
+This is a pretty simple game, wherein a white LED spins around each LED, and if you press either button on the green/yellow LED's, you gain 2 points on the green, 1 point on the yellow. If you press the button when the white LED is on the Red LED's, you lose a life. You have three lives, if you run out of lives, the game restarts. The switch pauses the game, and you can pause in the middle of a game if you so desire. Every two points, the speed the LED rotates around the LED's gets faster and faster.
 
 # Inputs & Outputs
 Inputs
