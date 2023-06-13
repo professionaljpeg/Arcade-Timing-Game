@@ -27,7 +27,7 @@ void setup() {
 }
 
 void loop() {
-  if (switchFlag == 1) //When the switch moves, the game pauses.
+  if (switchFlag == 1) { //When the switch moves, the game pauses.
     delay(5);
     off();
     switchState = digitalRead(switchPin);
@@ -63,7 +63,7 @@ void loop() {
     }
 
     while (game == 1) {
-    //The game itself.
+    //The game itself
       for (int i = 0; i < 10; i++) {
         if (switchFlag == 1) { 
           //Checks the switch every loop so you can pause.
@@ -103,7 +103,8 @@ void loop() {
               loseLife();
             } else { 
               //If you have zero lives, you lose.
-              Serial.print("You lost.\n");
+              Serial.print("You lost.");
+              Serial.print("--------------------------------------");
               loss();
               lives = 3;
               points = 0;
@@ -131,10 +132,11 @@ void loop() {
       }
       delay(difficulty[difNum]);
     }
-      Serial.print("Score: ");
+      Serial.print("\nScore: ");
       Serial.println(points);
       Serial.print("Lives: ");
       Serial.println(lives);
+      Serial.print("--------------------------------------");
   }
 }
 
